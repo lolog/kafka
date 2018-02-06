@@ -1,25 +1,33 @@
-package net.yeah.kafka;
+package net.yeah.kafka.producer.impl;
 
 import java.util.Properties;
 
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
+import net.yeah.kafka.producer.KafkaProducer;
+
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
 /**
- * adapter for apache kafka
  * @author lolog
  */
-public class ApacheKafkaProducer {
+public class ScalaKafkaProducer implements KafkaProducer{
 	private Properties properties = new Properties();
 	
 	private String topic;
+	
+	/**
+	 * 1. hosts新增DNS映射
+	 * 2. 只能用IP或hosts配置的域名
+	 */
 	private String brokers;
 	
 	/**
 	 * 是否获取反馈
-	 * 0  : 不获取反馈(消息有可能传输失败)
-	 * 1  : 获取消息传递给leader后反馈(其他副本有可能接受消息失败)
+	 *  0 : 不获取反馈(消息有可能传输失败)
+	 *  1 : 获取消息传递给leader后反馈(其他副本有可能接受消息失败)
 	 * -1 : 所有in-sync replicas接受到消息时的反馈
 	 */
 	private String requiredAcks = "1";
@@ -38,14 +46,37 @@ public class ApacheKafkaProducer {
 	
 	private Producer<String, String> producer;
 	
-	public ApacheKafkaProducer(String brokers, String topic) {
+	public ScalaKafkaProducer(String brokers, String topic) {
 		this.brokers = brokers;
 		this.topic = topic;
 		
 		this.createProducer();
 	}
 	
-	public boolean send(String key, String data) {
+	public ScalaKafkaProducer(String brokers, String topic, String requiredAcks, String producerType) {
+		this.brokers = brokers;
+		this.topic = topic;
+		this.requiredAcks = requiredAcks;
+		this.producerType = producerType;
+		
+		this.createProducer();
+	}
+	
+	@Override
+	public void sendAsync(String key, String data) {
+		KeyedMessage<String, String> msg = new KeyedMessage<String, String>(this.topic, key, data);
+		producer.send(msg);
+	}
+	
+	@Override
+	public void sendAsync(String key, int partition, String data) {
+		KeyedMessage<String, String> msg = new KeyedMessage<String, String>(this.topic, key, partition, data);
+		producer.send(msg);
+	}
+	
+	
+	@Override
+	public void sendSync(String key, String data) {
 		try {
 			KeyedMessage<String, String> msg = new KeyedMessage<String, String>(this.topic, key, data);
 			synchronized (this) {
@@ -53,7 +84,6 @@ public class ApacheKafkaProducer {
 			}
 		} catch (Exception e) {
 		}
-		return true;
 	}
 	
 	public void createProducer() {
@@ -67,6 +97,7 @@ public class ApacheKafkaProducer {
 		producer = new Producer<>(new ProducerConfig(properties));
 	}
 	
+	@Override
 	public void close() {
 		try {
 			producer.close();
@@ -75,5 +106,12 @@ public class ApacheKafkaProducer {
 		}
 		producer = null;
 	}
+}
 
+class ApacheSendAfter implements Callback {
+	@Override
+	public void onCompletion(RecordMetadata metadata, Exception exception) {
+		System.out.println("{topic = " +  metadata.topic() + ", offset = " + metadata.offset() + ", partition= " + metadata.partition() + "}");
+	}
+	
 }

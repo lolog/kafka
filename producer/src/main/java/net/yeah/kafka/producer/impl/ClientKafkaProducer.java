@@ -1,29 +1,47 @@
-package net.yeah.kafka;
+package net.yeah.kafka.producer.impl;
 
 import java.util.Properties;
 
+import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
 /**
- * adapter for cdh
  * @author lolog
  */
-public class CdhKafkaProducer {
+public class ClientKafkaProducer implements net.yeah.kafka.producer.KafkaProducer{
 	private String topic;
+	/**
+	 * 1. hosts新增DNS映射
+	 * 2. 只能用IP或hosts配置的域名
+	 */
 	private String brokers;
 	
 	private Producer<String, String> producer;
 
-	public CdhKafkaProducer(String brokers, String topic) {
+	public ClientKafkaProducer(String brokers, String topic) {
 		this.topic = topic;
 		this.brokers = brokers;
 		
 		this.createProducer();
 	}
-
-	public void send(String key, String data) {
+	
+	@Override
+	public void sendAsync(String key, String data) {
+		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, key, data);
+		producer.send(record, new CdhSendAfter());
+	}
+	
+	@Override
+	public void sendAsync(String key, int partition, String data) {
+		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, partition, key, data);
+		producer.send(record, new CdhSendAfter());
+	}
+	
+	@Override
+	public void sendSync(String key, String data) {
 		producer.send(new ProducerRecord<String, String>(this.topic, key, data));
 	}
 
@@ -49,7 +67,8 @@ public class CdhKafkaProducer {
 
 		this.producer = new KafkaProducer<>(props);
 	}
-
+	
+	@Override
 	public void close() {
 		try {
 			producer.close();
@@ -58,4 +77,12 @@ public class CdhKafkaProducer {
 		}
 		producer = null;
 	}
+}
+
+class CdhSendAfter implements Callback {
+	@Override
+	public void onCompletion(RecordMetadata metadata, Exception exception) {
+		System.out.println("{topic = " +  metadata.topic() + ", offset = " + metadata.offset() + ", partition= " + metadata.partition() + "}");
+	}
+	
 }
