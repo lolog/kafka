@@ -7,9 +7,6 @@ import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import net.yeah.kafka.producer.KafkaProducer;
 
-import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.RecordMetadata;
-
 /**
  * @author lolog
  */
@@ -106,12 +103,4 @@ public class ScalaKafkaProducer implements KafkaProducer{
 		}
 		producer = null;
 	}
-}
-
-class ApacheSendAfter implements Callback {
-	@Override
-	public void onCompletion(RecordMetadata metadata, Exception exception) {
-		System.out.println("{topic = " +  metadata.topic() + ", offset = " + metadata.offset() + ", partition= " + metadata.partition() + "}");
-	}
-	
 }

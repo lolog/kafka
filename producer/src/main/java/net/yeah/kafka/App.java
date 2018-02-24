@@ -19,74 +19,74 @@ public class App {
 	private String brokers = "guojl:9092";
 	
 	@Test
-	public void cdhSyncSend() {
+	public void clientSyncSend() {
 		KafkaProducer producer = new ClientKafkaProducer(brokers, topic);
 		
-		producer.sendSync("cdh_sync_key", "cdh_sync_data");
+		producer.sendSync("client_sync_key", "client_sync_data");
 		producer.close();
 	}
 	
 	@Test
-	public void apacheSyncSend() {
+	public void scalaSyncSend() {
 		KafkaProducer producer = new ScalaKafkaProducer(brokers, topic);
 		
-		producer.sendSync("apache_sync_key", "apache_sync_data");
+		producer.sendSync("scala_sync_key", "scala_sync_data");
 		producer.close();
 	}
 	
 	@Test
-	public void cdhAsyncSend() {
+	public void clientAsyncSend() {
 		KafkaProducer producer = new ClientKafkaProducer(brokers, topic);
 		
-		producer.sendAsync("cdh_async_key", "cdh_async_data");
+		producer.sendAsync("client_async_key", "client_async_data");
 		producer.close();
 	}
 	
 	@Test
-	public void apacheAsyncSend() {
+	public void scalaAsyncSend() {
 		String requiredAcks = "0";
 		String producerType = "async";
 		KafkaProducer producer = new ScalaKafkaProducer(brokers, topic, requiredAcks, producerType);
 		
-		producer.sendAsync("apache_async_key", "apache_async_data");
+		producer.sendAsync("scala_async_key", "scala_async_data");
 		producer.close();
 	}
 	
 	@Test
-	public void cdhAsyncPartitionSend() {
+	public void clientAsyncPartitionSend() {
 		int partition = 0;
 		KafkaProducer producer = new ClientKafkaProducer(brokers, topic);
 		
 		// 指定分区发送，那么发送是按照先后顺序执行的
-		producer.sendAsync("cdh_async_partition_key_0", partition, "cdh_async_partition_data_0");
-		producer.sendAsync("cdh_async_partition_key_1", partition, "cdh_async_partition_data_1");
+		producer.sendAsync("client_async_partition_key_0", partition, "client_async_partition_data_0");
+		producer.sendAsync("client_async_partition_key_1", partition, "client_async_partition_data_1");
 		producer.close();
 	}
 	
 	@Test
-	public void apacheAsyncPartitionSend() {
+	public void scalaAsyncPartitionSend() {
 		int partition = 0;
 		String requiredAcks = "0";
 		String producerType = "async";
 		KafkaProducer producer = new ScalaKafkaProducer(brokers, topic, requiredAcks, producerType);
 		
 		// 指定分区发送，那么发送是按照先后顺序执行的
-		producer.sendAsync("apache_async_partition_key_0", partition, "apache_async_partition_data_0");
-		producer.sendAsync("apache_async_partition_key_1", partition, "apache_async_partition_data_1");
+		producer.sendAsync("scala_async_partition_key_0", partition, "scala_async_partition_data_0");
+		producer.sendAsync("scala_async_partition_key_1", partition, "scala_async_partition_data_1");
 		producer.close();
 	}
 	
 	@Test
-	public void apacheAsyncPartitionCustomizingSend() {
+	public void scalaAsyncPartitionCustomizingSend() {
 		int partition = 0;
 		String requiredAcks = "0";
 		String producerType = "async";
 		KafkaProducer producer = new ScalaPartitionCustomizingKafkaProducer(brokers, topic, requiredAcks, producerType);
 		
 		// 分区自定义
-		producer.sendAsync("apache_async_partition_customizing_key", "apache_async_partition_customizing_data");
+		producer.sendAsync("scala_async_partition_customizing_key", "scala_async_partition_customizing_data");
 		// 固定分区
-		producer.sendAsync("apache_async_partition_customizing_key_0", partition, "apache_async_partition_customizing_data_0");
+		producer.sendAsync("scala_async_partition_customizing_key_0", partition, "scala_async_partition_customizing_data_0");
 		producer.close();
 	}
 }

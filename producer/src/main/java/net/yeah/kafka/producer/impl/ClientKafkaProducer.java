@@ -1,6 +1,7 @@
 package net.yeah.kafka.producer.impl;
 
 import java.util.Properties;
+import java.util.concurrent.Future;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,6 +12,7 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 /**
  * @author lolog
  */
+@SuppressWarnings("unused")
 public class ClientKafkaProducer implements net.yeah.kafka.producer.KafkaProducer{
 	private String topic;
 	/**
@@ -31,18 +33,29 @@ public class ClientKafkaProducer implements net.yeah.kafka.producer.KafkaProduce
 	@Override
 	public void sendAsync(String key, String data) {
 		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, key, data);
-		producer.send(record, new CdhSendAfter());
+		/**
+		 * 1. 通过Handler回调,异步非阻塞
+		 * 2. 通过future.get()回调,阻塞方式
+		 */
+		Future<RecordMetadata> future = producer.send(record, new ClientKafkaSendAfter());
 	}
 	
 	@Override
 	public void sendAsync(String key, int partition, String data) {
 		ProducerRecord<String, String> record = new ProducerRecord<String, String>(this.topic, partition, key, data);
-		producer.send(record, new CdhSendAfter());
+		/**
+		 * 1. 通过Handler回调,异步非阻塞
+		 * 2. 通过future.get()回调,阻塞方式
+		 */
+		Future<RecordMetadata> future = producer.send(record, new ClientKafkaSendAfter());
 	}
 	
 	@Override
 	public void sendSync(String key, String data) {
-		producer.send(new ProducerRecord<String, String>(this.topic, key, data));
+		/**
+		 * 通过future.get()回调,阻塞方式
+		 */
+		Future<RecordMetadata> future = producer.send(new ProducerRecord<String, String>(this.topic, key, data));
 	}
 
 	public void createProducer() {
@@ -79,10 +92,21 @@ public class ClientKafkaProducer implements net.yeah.kafka.producer.KafkaProduce
 	}
 }
 
-class CdhSendAfter implements Callback {
+/**
+ * 异步回调Hanlder,如果发送失败将exception
+ * @author Adolf Felix
+ */
+class ClientKafkaSendAfter implements Callback {
 	@Override
 	public void onCompletion(RecordMetadata metadata, Exception exception) {
 		System.out.println("{topic = " +  metadata.topic() + ", offset = " + metadata.offset() + ", partition= " + metadata.partition() + "}");
+		
+		if (exception == null) {
+			System.out.println("Send Successful...");
+		}
+		else {
+			System.out.println("exception = " + exception.getMessage());
+		}
 	}
 	
 }
